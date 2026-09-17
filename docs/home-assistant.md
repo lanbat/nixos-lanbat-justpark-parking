@@ -86,6 +86,120 @@ automation:
             ({{ trigger.payload_json.reason }})
 ```
 
+## Misparking — bay occupancy and incidents
+
+```yaml
+mqtt:
+  sensor:
+    - name: "Parking bays free"
+      unique_id: parking_guard_bays_free
+      state_topic: "parking-guard/occupancy"
+      value_template: "{{ value_json.free }}"
+      json_attributes_topic: "parking-guard/occupancy"
+      icon: mdi:parking
+
+  binary_sensor:
+    - name: "Parking misparked vehicle"
+      unique_id: parking_guard_misparked
+      state_topic: "parking-guard/violation"
+      value_template: "{{ 'ON' if value_json.incident_id else 'OFF' }}"
+      json_attributes_topic: "parking-guard/violation"
+      device_class: problem
+```
+
+The retained `parking-guard/occupancy` payload carries a `slots` map, so a per-bay
+template sensor is a one-liner:
+
+```yaml
+template:
+  - sensor:
+      - name: "Front left bay"
+        state: >-
+          {% set slot = state_attr('sensor.parking_bays_free', 'slots')['front_left'] %}
+          {{ 'free' if not slot.occupied else ('ok' if slot.compliant else 'misparked') }}
+```
+
+## Match-day enforcement switch
+
+Nobody is messaged unless enough bookings are live, or you force enforcement on:
+
+```yaml
+mqtt:
+  switch:
+    - name: "Parking enforcement"
+      unique_id: parking_guard_enforce
+      command_topic: "parking-guard/command/enforce"
+      state_topic: "parking-guard/enforce"
+      payload_on: "on"
+      payload_off: "off"
+      state_on: "on"
+      state_off: "off"
+      icon: mdi:shield-car
+```
+
+Publish `auto` to that command topic to hand control back to the booking count. A match-day
+calendar automation is the natural fit:
+
+```yaml
+automation:
+  - id: parking_guard_matchday
+    alias: "Parking — enforcement on for match days"
+    trigger:
+      - platform: calendar
+        event: start
+        entity_id: calendar.home_matches
+    action:
+      - service: mqtt.publish
+        data:
+          topic: parking-guard/command/enforce
+          payload: "on"
+```
+
+## Following an incident
+
+```yaml
+automation:
+  - id: parking_guard_incident_log
+    alias: "Parking — incident lifecycle"
+    mode: parallel
+    trigger:
+      - platform: mqtt
+        topic: parking-guard/notification
+        id: notified
+      - platform: mqtt
+        topic: parking-guard/incident/ack
+        id: acked
+      - platform: mqtt
+        topic: parking-guard/escalation
+        id: escalated
+    action:
+      - choose:
+          - conditions: "{{ trigger.id == 'notified' }}"
+            sequence:
+              - service: logbook.log
+                data:
+                  name: Parking guard
+                  message: >-
+                    Messaged the client over {{ trigger.payload_json.channel }}
+                    about {{ trigger.payload_json.kind }}
+          - conditions: "{{ trigger.id == 'acked' }}"
+            sequence:
+              - service: logbook.log
+                data:
+                  name: Parking guard
+                  message: "Client acknowledged via {{ trigger.payload_json.channel }}"
+          - conditions: "{{ trigger.id == 'escalated' }}"
+            sequence:
+              - service: notify.mobile_app
+                data:
+                  title: "Parking needs you"
+                  message: >-
+                    {{ trigger.payload_json.plate }} — {{ trigger.payload_json.reason }}
+```
+
+`parking-guard/escalation` is the one worth a push notification: it only fires when the
+client could not be reached or did not move the car.
+
 ## Frigate companion
 
 The Frigate custom component (already enabled in lanbat) provides review clips and

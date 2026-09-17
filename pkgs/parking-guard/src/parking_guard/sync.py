@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import argparse
 import logging
-import sys
 from pathlib import Path
 
 from parking_guard.config import load_guard_config
+from parking_guard.contacts import store_booking_contacts
 from parking_guard.justpark.client import (
     JustParkClient,
     bookings_from_resident_plates,
@@ -48,6 +48,16 @@ def run_sync(config_path: Path) -> int:
 
     count = store.replace_allowlist(bookings)
     log.info("allowlist updated: %s entries", count)
+
+    contacts = store_booking_contacts(
+        store,
+        bookings,
+        retention_days=cfg.contacts.retention_days,
+        default_country_code=cfg.contacts.default_country_code,
+    )
+    purged = store.purge_expired_contacts()
+    log.info("contacts stored: %s, expired contacts purged: %s", contacts, purged)
+
     store.close()
     return 0
 

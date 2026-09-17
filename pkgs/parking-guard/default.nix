@@ -15,6 +15,7 @@ python3Packages.buildPythonApplication {
 
   dependencies = with python3Packages; [
     paho-mqtt
+    pyyaml
     requests
   ];
 

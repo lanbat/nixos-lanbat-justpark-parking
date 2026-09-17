@@ -24,6 +24,9 @@ def bookings_from_rows(rows: list[dict]) -> list[Booking]:
                 end_ts=float(row.get("end_ts", time.time() + 3600)),
                 booking_ref=str(row.get("booking_ref", plate)),
                 source=str(row.get("source", "import")),
+                name=str(row.get("name", "") or ""),
+                phone=str(row.get("phone", "") or ""),
+                email=str(row.get("email", "") or ""),
             )
         )
     return bookings
@@ -50,6 +53,9 @@ def import_csv(path: Path) -> list[Booking]:
                     "end_ts": _parse_optional_ts(end, default_past=False),
                     "booking_ref": ref,
                     "source": "luna-csv",
+                    "name": _field(row, ["name", "driver", "driver_name", "customer_name"]),
+                    "phone": _field(row, ["phone", "mobile", "telephone", "driver_phone"]),
+                    "email": _field(row, ["email", "driver_email", "customer_email"]),
                 }
             )
     return bookings_from_rows(rows)
