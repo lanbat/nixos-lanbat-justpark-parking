@@ -1,4 +1,4 @@
-# lanbat-justpark-parking
+# nixos-lanbat-justpark-parking
 
 External [lanbat](https://github.com/lanbat/nixos) server plugin that:
 
