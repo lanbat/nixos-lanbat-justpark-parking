@@ -82,10 +82,10 @@ in
   config = lib.mkIf (cfg != null) {
     lanbat.services.parking-guard = {
       tier = "always-on";
-      state = [ "parking-guard" ];
       units = [
         "parking-guard"
         "parking-guard-sync"
+        "parking-guard-csv-import"
       ];
       secrets = {
         justpark-api-env = { };
@@ -94,7 +94,7 @@ in
       };
       account = {
         name = "parking-guard";
-        uid = 988;
+        uid = 986;
       };
     };
 
