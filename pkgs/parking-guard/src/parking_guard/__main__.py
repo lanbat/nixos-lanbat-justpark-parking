@@ -66,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     cfg = load_guard_config(args.config)
-    store = Store(cfg.db_path)
+    store = Store(cfg.database_dsn)
     secrets = load_notify_config()
     channels = build_channels(secrets)
     owner = owner_contact(secrets)

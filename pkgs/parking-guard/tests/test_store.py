@@ -1,11 +1,9 @@
 import time
 
-from parking_guard.store import SCHEMA_VERSION, STATUS_RESOLVED, Booking, Store
+from parking_guard.store import SCHEMA_VERSION, STATUS_RESOLVED, Booking
 
 
-def test_allowlist_authorization_with_grace(tmp_path):
-    db = tmp_path / "test.db"
-    store = Store(db)
+def test_allowlist_authorization_with_grace(store):
     now = time.time()
     store.replace_allowlist(
         [
@@ -28,28 +26,21 @@ def test_allowlist_authorization_with_grace(tmp_path):
     assert not ok
     assert reason == "no_active_booking"
 
-    store.close()
 
 
-def test_cooldown(tmp_path):
-    db = tmp_path / "test.db"
-    store = Store(db)
+def test_cooldown(store):
     now = 1_700_000_000.0
     assert store.should_alert("AB12CDE", cooldown_seconds=1800, now=now)
     store.mark_alerted("AB12CDE", now=now)
     assert not store.should_alert("AB12CDE", cooldown_seconds=1800, now=now + 60)
     assert store.should_alert("AB12CDE", cooldown_seconds=1800, now=now + 2000)
-    store.close()
 
 
-def test_schema_version_is_stamped(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_schema_version_is_stamped(store):
     assert store.get_meta("schema_version") == str(SCHEMA_VERSION)
-    store.close()
 
 
-def test_contacts_merge_and_expire(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_contacts_merge_and_expire(store):
     now = 1_700_000_000.0
 
     store.upsert_contact(
@@ -81,11 +72,9 @@ def test_contacts_merge_and_expire(tmp_path):
 
     assert store.purge_expired_contacts(now=now + 7200) == 1
     assert store.get_contact("AB12CDE") is None
-    store.close()
 
 
-def test_incident_is_reused_until_resolved(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_incident_is_reused_until_resolved(store):
     now = 1_700_000_000.0
 
     incident_id, created = store.open_incident(
@@ -107,11 +96,9 @@ def test_incident_is_reused_until_resolved(tmp_path):
     )
     assert created_after_resolve
     assert reopened != incident_id
-    store.close()
 
 
-def test_incidents_due_respects_next_action_and_status(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_incidents_due_respects_next_action_and_status(store):
     now = 1_700_000_000.0
     incident_id, _ = store.open_incident(plate="AB12 CDE", object_id="obj1", kind="outside_bay", now=now)
 
@@ -123,11 +110,9 @@ def test_incidents_due_respects_next_action_and_status(tmp_path):
 
     store.update_incident(incident_id, status=STATUS_RESOLVED, now=now)
     assert store.incidents_due(now=now + 301) == []
-    store.close()
 
 
-def test_ack_token_can_only_be_claimed_once(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_ack_token_can_only_be_claimed_once(store):
     now = 1_700_000_000.0
     incident_id, _ = store.open_incident(plate="AB12 CDE", object_id="obj1", kind="straddling", now=now)
     store.record_notification(
@@ -146,14 +131,11 @@ def test_ack_token_can_only_be_claimed_once(tmp_path):
 
     store.record_ack(incident_id=incident_id, channel="whatsapp", token="tok123", now=now + 5)
     assert len(store.notifications_for_incident(incident_id)) == 1
-    store.close()
 
 
-def test_slot_state_round_trip(tmp_path):
-    store = Store(tmp_path / "test.db")
+def test_slot_state_round_trip(store):
     store.set_slot_state(slot="front_left", plate="AB12 CDE", object_id="obj1", compliant=False, now=1.0)
     store.set_slot_state(slot="front_left", plate="AB12 CDE", object_id="obj1", compliant=True, now=2.0)
     states = store.slot_states()
     assert len(states) == 1
     assert states[0]["compliant"] == 1
-    store.close()

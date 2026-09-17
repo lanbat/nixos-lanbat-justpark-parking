@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 def run_sync(config_path: Path) -> int:
     cfg = load_guard_config(config_path)
-    store = Store(cfg.db_path)
+    store = Store(cfg.database_dsn)
 
     bookings = []
 

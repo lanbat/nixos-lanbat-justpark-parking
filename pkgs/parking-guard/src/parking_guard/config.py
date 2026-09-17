@@ -7,6 +7,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from parking_guard.geometry import parse_polygon
 from parking_guard.slots import MODE_HYBRID, Area, Layout, Slot, SlotRules
@@ -76,7 +77,7 @@ class AckConfig:
 @dataclass(frozen=True)
 class GuardConfig:
     state_dir: Path
-    db_path: Path
+    database_dsn: str
     csv_import_path: Path
     mqtt_host: str
     mqtt_port: int
@@ -115,7 +116,7 @@ def load_guard_config(config_path: Path) -> GuardConfig:
     state_dir = Path(raw.get("stateDir", "/var/lib/parking-guard"))
     return GuardConfig(
         state_dir=state_dir,
-        db_path=state_dir / "parking-guard.db",
+        database_dsn=_database_dsn(raw),
         csv_import_path=state_dir / "import" / "bookings.csv",
         mqtt_host=raw.get("mqttHost", "127.0.0.1"),
         mqtt_port=int(raw.get("mqttPort", 1883)),
@@ -140,6 +141,25 @@ def load_guard_config(config_path: Path) -> GuardConfig:
         ack=_load_ack(raw.get("ack", {})),
         contacts=_load_contacts(raw.get("contacts", {}), state_dir),
     )
+
+
+def _database_dsn(raw: dict[str, Any]) -> str:
+    """Build the libpq DSN for the lanbat always-on PostgreSQL instance.
+
+    No password: the service runs as the ``parking-guard`` system user and the
+    instance authenticates unix socket logins by peer identity.
+    """
+    database = raw.get("database", {})
+    if isinstance(database, str):
+        return database
+    if database.get("dsn"):
+        return str(database["dsn"])
+
+    name = str(database.get("name", "parking-guard"))
+    socket = str(database.get("socket", "/run/postgresql-always-on"))
+    port = int(database.get("port", 5433))
+    user = str(database.get("user", "") or "")
+    return f"postgresql://{user}@/{quote(name)}?host={quote(socket)}&port={port}"
 
 
 def _load_layout(raw: dict[str, Any]) -> Layout:
