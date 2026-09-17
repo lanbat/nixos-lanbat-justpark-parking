@@ -34,51 +34,6 @@ let
   );
 in
 {
-  options.lanbat.deployment.parkingGuard = lib.mkOption {
-    type = lib.types.nullOr (
-      lib.types.submodule {
-        options = {
-          siteId = lib.mkOption {
-            type = lib.types.str;
-            description = "JustPark site / location identifier for API sync.";
-          };
-          cameras = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ "c1" ];
-            description = "Frigate camera names to evaluate for LPR.";
-          };
-          graceMinutes = lib.mkOption {
-            type = lib.types.ints.positive;
-            default = 5;
-            description = "Minutes before booking start / after end to still treat as authorized.";
-          };
-          cooldownMinutes = lib.mkOption {
-            type = lib.types.ints.positive;
-            default = 30;
-            description = "Minutes between repeat alerts for the same plate.";
-          };
-          minScore = lib.mkOption {
-            type = lib.types.float;
-            default = 0.8;
-            description = "Minimum Frigate LPR confidence score to evaluate.";
-          };
-          residentPlates = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
-            description = "Always-authorized resident plates (manual allowlist).";
-          };
-          syncIntervalMinutes = lib.mkOption {
-            type = lib.types.ints.positive;
-            default = 5;
-            description = "How often to poll JustPark / re-import CSV.";
-          };
-        };
-      }
-    );
-    default = null;
-    description = "Parking guard settings. Set when the lanbat-justpark-parking plugin is enabled.";
-  };
-
   config = lib.mkIf (cfg != null) {
     lanbat.services.parking-guard = {
       tier = "always-on";
