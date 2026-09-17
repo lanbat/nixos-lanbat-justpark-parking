@@ -130,7 +130,6 @@ in
       pathConfig = {
         PathChanged = "/var/lib/parking-guard/import/bookings.csv";
         Unit = "parking-guard-csv-import.service";
-        MakeDirectory = true;
       };
     };
 

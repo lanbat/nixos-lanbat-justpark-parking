@@ -30,7 +30,7 @@ def bookings_from_rows(rows: list[dict]) -> list[Booking]:
 
 
 def import_csv(path: Path) -> list[Booking]:
-    if not path.exists():
+    if not path.exists() or not path.is_file():
         return []
 
     with path.open(newline="", encoding="utf-8") as handle:
