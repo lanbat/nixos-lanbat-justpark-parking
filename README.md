@@ -1,11 +1,31 @@
-# nixos-lanbat-justpark-parking
+# parking-guard
 
-External [lanbat](https://github.com/lanbat/nixos) server plugin that:
+**Know the moment an unbooked car takes a paid parking space.**
 
-1. Syncs **JustPark** bookings (API or Luna CSV) and resident plates into a local SQLite allowlist
-2. Subscribes to **Frigate LPR** events on MQTT (`frigate/tracked_object_update`)
-3. Publishes `parking-guard/alert` when an unrecognized plate appears during an active booking window
-4. Optionally notifies via **Pushover** or **Telegram**, and integrates with **Home Assistant** via MQTT
+parking-guard watches your car park through [Frigate](https://frigate.video/)'s licence-plate
+recognition, checks every plate against live [JustPark](https://www.justpark.com/) bookings and a
+resident allowlist, and alerts you when a car turns up that should not be there. It ships as a
+NixOS flake plugin for [lanbat/nixconf](https://github.com/lanbat/nixconf): one flake input and one
+config block.
+
+Part of [LAN BAT](https://lanbat.github.io/), open home infrastructure.
+
+## How it works
+
+```text
+JustPark API / bookings.csv ─┐
+resident plates ─────────────┴─▶ SQLite allowlist
+                                       │
+Frigate LPR ── MQTT ─▶ parking-guard ──┤ authorised? within booking + grace?
+                                       │
+                                       ├─▶ parking-guard/event   every decision
+                                       └─▶ parking-guard/alert   unauthorised only ─▶ Home Assistant, Pushover, Telegram
+```
+
+1. Syncs **JustPark** bookings (partner API, or a CSV export) and resident plates into a local SQLite allowlist.
+2. Subscribes to **Frigate LPR** events on MQTT (`frigate/tracked_object_update`).
+3. Publishes `parking-guard/alert` when an unrecognised plate appears, with a grace period and a per-plate cooldown.
+4. Optionally notifies via **Pushover** or **Telegram**, and plugs into **Home Assistant** automations over MQTT.
 
 Requires `lanbatPlugins.services` on the same host (Frigate, Mosquitto, Home Assistant).
 
@@ -13,7 +33,7 @@ Requires `lanbatPlugins.services` on the same host (Frigate, Mosquitto, Home Ass
 
 ```nix
 # flake.nix
-inputs.lanbat-justpark-parking.url = "path:../lanbat-justpark-parking";
+inputs.lanbat-justpark-parking.url = "github:lanbat/nixos-lanbat-justpark-parking";
 inputs.lanbat-justpark-parking.inputs.nixpkgs.follows = "nixpkgs";
 ```
 
