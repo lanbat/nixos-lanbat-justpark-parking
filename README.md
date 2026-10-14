@@ -1,6 +1,11 @@
-# nixos-lanbat-justpark-parking
+# parking-guard
 
-External [lanbat](https://github.com/lanbat/nixos) server plugin that:
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![IRC: #lanbat on Libera.Chat](https://img.shields.io/badge/IRC-%23lanbat%20on%20Libera.Chat-2f4bff.svg)](https://web.libera.chat/#lanbat)
+
+A NixOS flake plugin for [lanbat/nixconf](https://github.com/lanbat/nixconf). Part of [LAN BAT](https://lanbat.github.io/), open home infrastructure you can read, fork and borrow from.
+
+External [lanbat](https://github.com/lanbat/nixconf) server plugin that:
 
 1. Syncs **JustPark** bookings (API or Luna CSV) and resident plates into a local SQLite allowlist
 2. Subscribes to **Frigate LPR** events on MQTT (`frigate/tracked_object_update`)
