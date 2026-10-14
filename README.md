@@ -1,5 +1,6 @@
 # parking-guard
 
+[![check](https://github.com/lanbat/nixos-lanbat-justpark-parking/actions/workflows/check.yml/badge.svg)](https://github.com/lanbat/nixos-lanbat-justpark-parking/actions/workflows/check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![IRC: #lanbat on Libera.Chat](https://img.shields.io/badge/IRC-%23lanbat%20on%20Libera.Chat-2f4bff.svg)](https://web.libera.chat/#lanbat)
 
